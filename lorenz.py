@@ -64,3 +64,5 @@ def lorenz(list):
 
 x = [1,2,3,3,3,2]
 lorenz(x)
+
+#JiaSZ
