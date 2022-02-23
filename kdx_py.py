@@ -86,11 +86,11 @@ def read_OD(file):
     
     O_str = 'O_' + O_type
     df1[O_str] = None
-    df1['D_Resi'] = None
     # df1
-    for index, row in df1.iterrows():
-        str0 = row['Name']
+    for row in df1.itertuples():
+        str0 = getattr(row, 'Name')
         split0 = re.split(r'(\W+)', str0)
+        index = row.Index
         df1.at[index, O_str] = split0[0]
         df1.at[index, 'D_Resi'] = split0[2]
         if (index+1) % 20000 == 0:
@@ -123,7 +123,7 @@ def calc_p_estimate(df_Resi, df_318):
 
 '''3.将D居住点的人口、所属区、街道等信息匹配到df1上'''
 def connect_Resi(df, df_Resi):
-    print('...3.connect df_Resi to df_OD')
+    print('...4.connect df_Resi to df_OD')
     print('......connecting')
     for row in df.itertuples():
         odid = getattr(row, 'D_Resi')
@@ -239,6 +239,7 @@ def connect_Ai(Ai, df_Resi):
         Ai.at[index,'region'] = df_Resi.at[index, 'region']
         Ai.at[index,'District'] = df_Resi.at[index, 'District']
         Ai.at[index,'p_estimate'] = df_Resi.at[index, 'p_estimate']
+    Ai['p*A'] = Ai['Ai=sum(S*f/sum())']*Ai['p_estimate']
     print('......completed\n')
     return Ai
 
@@ -312,8 +313,9 @@ if __name__ == '__main__':
     set_pd()
 
     '''模型参数设置'''
-    #设施供给, supply = 'P/C', sum(D*f), 或指定1/4.74
-    supply = 'P/C'
+    #supply = 'P/C', 'sum(D*f)', 或指定1/4.74
+    #O_type = 'r10' or 'r2'
+    supply = 1
     O_type = 'r2'
     distance = 300
     time_limit = 5
@@ -345,7 +347,7 @@ if __name__ == '__main__':
     '''计算设施点供给能力(按模型类型)'''
     '''计算设施点载荷能力, 计算单设施对需求点的可达性贡献'''
     df1 = connect_S(df1)
-    
+
     '''加总可达性贡献, 计算需求点kdx'''
     Ai = calc_Ai(df1)
     # Ai.loc[43]
@@ -353,11 +355,11 @@ if __name__ == '__main__':
 
     '''连接估计人口(权数)'''
     Ai = connect_Ai(Ai, df_Resi)
-
+    
     '''按计算范围汇总加权kdx'''
-    print('..9.1/9.2 summing p*A on District/region')
-    kdx_District = sum_pivot(Ai, 'District', 'p_estimate', 'sum_p*A')
-    kdx_region = sum_pivot(Ai, 'region', 'p_estimate', 'sum_p*A')
+    print('...9.1/9.2 summing p*A on District/region')
+    kdx_District = sum_pivot(Ai, 'District', 'p*A', 'sum_p*A')
+    kdx_region = sum_pivot(Ai, 'region', 'p*A', 'sum_p*A')
     
     '''加权kdx除以总人口'''
     kdx_District = connect_p_District(kdx_District, df_Resi)
