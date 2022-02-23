@@ -3,7 +3,7 @@ from simpledbf import Dbf5
 import os
 import pandas as pd
 import numpy as np
-import re
+
 import xlwt
 import xlwt
 import warnings
